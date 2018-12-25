@@ -120,10 +120,9 @@ cv::VideoCapture OpenCamera(std::string strCamInfo) {
 		} else if (strKey == "FH") {
 			cam.set(cv::CAP_PROP_FRAME_HEIGHT, std::atoi(strVal.c_str()));
 		} else if (strKey == "AE") {
-			cam.set(cv::CAP_PROP_AUTO_EXPOSURE, 0);
-			//cam.set(cv::CAP_PROP_AUTO_EXPOSURE, std::atof(strVal.c_str()));			
+			cam.set(cv::CAP_PROP_AUTO_EXPOSURE, std::atof(strVal.c_str()));			
 		} else if (strKey == "EP") {
-			//cam.set(cv::CAP_PROP_EXPOSURE, std::atof(strVal.c_str()));
+			cam.set(cv::CAP_PROP_EXPOSURE, std::atof(strVal.c_str()));
 		}else {
 			LOG(WARNING) << "Unkown property " << strSet;
 		}
@@ -223,6 +222,16 @@ cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 	cv::putText(img, strText, predBox.tl() + cv::Point(0, predSize.height),
 			nFontFace, dFontScale, color, nWeight, cv::LINE_AA);
 	return predBox;
+}
+
+void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
+		cv::Scalar &color, int nLineWidth, int nLineType) {
+	cv::Point2f vertices[4];
+	rotBox.points(vertices);
+	for (int i = 0; i < 4; i++) {
+		cv::line(img, vertices[i], vertices[(i + 1) % 4], color,
+				nLineWidth, nLineType);
+	}
 }
 
 } //namespace cvu

@@ -46,5 +46,8 @@ cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 		cv::Scalar color = cv::Scalar::all(255), int nWeight = 1,
 		int nFontFace = cv::FONT_HERSHEY_COMPLEX, int nLineType = cv::LINE_AA);
 
+void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
+		cv::Scalar &color, int nLineWidth, int nLineType = cv::LINE_AA);
+
 }
 #endif
