@@ -4,6 +4,8 @@
 #include <opencv2/opencv.hpp> //for cv::VideoCapture
 #include <string> // for std::string
 
+#define WITH_CAIRO
+
 namespace cvu {
 
 extern cv::Scalar BGR_GREEN;
@@ -48,6 +50,11 @@ cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 
 void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
 		cv::Scalar &color, int nLineWidth, int nLineType = cv::LINE_AA);
+
+#if defined WITH_CAIRO
+void RenderText(cv::Mat &img, std::string strText, cv::Point org,
+		bool bItalic, bool bBold, double dSize, cv::Scalar clr);
+#endif
 
 }
 #endif

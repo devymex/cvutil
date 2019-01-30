@@ -7,6 +7,12 @@
 #include <unistd.h> // for ::close
 #include <sys/ioctl.h> //for ::ioctl
 #include <linux/videodev2.h> //for ::v4l2_capability, ::VIDIOC_QUERYCAP
+
+#if defined WITH_CAIRO
+#include <cairo/cairo.h>
+#endif
+
+
 namespace cvu {
 
 cv::Scalar BGR_BLACK	= cv::Scalar(0, 0, 0);
@@ -120,7 +126,7 @@ cv::VideoCapture OpenCamera(std::string strCamInfo) {
 		} else if (strKey == "FH") {
 			cam.set(cv::CAP_PROP_FRAME_HEIGHT, std::atoi(strVal.c_str()));
 		} else if (strKey == "AE") {
-			cam.set(cv::CAP_PROP_AUTO_EXPOSURE, std::atof(strVal.c_str()));			
+			cam.set(cv::CAP_PROP_AUTO_EXPOSURE, std::atof(strVal.c_str()));
 		} else if (strKey == "EP") {
 			cam.set(cv::CAP_PROP_EXPOSURE, std::atof(strVal.c_str()));
 		}else {
@@ -198,6 +204,16 @@ cv::Mat StereoCombine(cv::Mat img1, cv::Mat img2, bool bVertical) {
 	return combined;
 }
 
+void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
+		cv::Scalar &color, int nLineWidth, int nLineType) {
+	cv::Point2f vertices[4];
+	rotBox.points(vertices);
+	for (int i = 0; i < 4; i++) {
+		cv::line(img, vertices[i], vertices[(i + 1) % 4], color,
+				nLineWidth, nLineType);
+	}
+}
+
 cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 		TEXT_ALIGN alignment, double dFontScale, cv::Scalar color,
 		int nWeight, int nFontFace, int nLineType) {
@@ -224,15 +240,56 @@ cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 	return predBox;
 }
 
-void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
-		cv::Scalar &color, int nLineWidth, int nLineType) {
-	cv::Point2f vertices[4];
-	rotBox.points(vertices);
-	for (int i = 0; i < 4; i++) {
-		cv::line(img, vertices[i], vertices[(i + 1) % 4], color,
-				nLineWidth, nLineType);
+#if defined WITH_CAIRO
+
+void RenderText(cv::Mat &raw, std::string strText, cv::Point org,
+		TEXT_ALIGN alignment, double dSize, cv::Scalar clr,
+		bool bItalic, bool bBold) {
+	CHECK(!raw.empty());
+	CHECK(raw.type() == CV_8UC3 || raw.type() == CV_8UC1);
+
+	cv::Mat img;
+	cairo_format_t cairoFormat;
+	if (raw.channels() == 1) {
+		cairoFormat = CAIRO_FORMAT_A8;
+		img = raw;
+	} else {
+		cairoFormat = CAIRO_FORMAT_ARGB32;
+		cv::cvtColor(raw, img, cv::COLOR_BGR2BGRA);
+	}
+
+	//Create surface
+	cairo_surface_t *pSurface = cairo_image_surface_create(
+			cairoFormat, raw.cols, raw.rows);
+	int nStride = cairo_image_surface_get_stride(pSurface);
+
+	//Copy from source
+	uint8_t* pCairoBuf = cairo_image_surface_get_data(pSurface);
+	cv::Mat cairoMat(raw.size(), CV_8UC4, pCairoBuf, nStride);
+	img.copyTo(cairoMat);
+
+	//Do Rendering
+	cairo_t *pCairo = cairo_create(pSurface);
+	const char *pFontFace = "Noto Sans CJK SC";
+	cairo_font_slant_t slant = bItalic ?
+			CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL;
+	cairo_font_weight_t weight = bBold ?
+			CAIRO_FONT_WEIGHT_BOLD : CAIRO_FONT_WEIGHT_NORMAL;
+	cairo_select_font_face(pCairo, pFontFace, slant, weight);
+	cairo_set_font_size(pCairo, dSize);
+	cairo_set_source_rgb(pCairo, clr[2] / 255., clr[1] / 255., clr[0] / 255.);
+	cairo_move_to(pCairo, org.x, org.y);
+	cairo_show_text(pCairo, strText.c_str());
+
+	//Copy result to output
+	if (raw.channels() == 1) {
+		img.copyTo(raw);
+	} else {
+		cv::cvtColor(img, raw, cv::COLOR_BGRA2BGR);
 	}
 }
+
+#endif
 
 } //namespace cvu
 
