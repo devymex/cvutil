@@ -53,7 +53,7 @@ void DrawRotatedRectangle(cv::Mat& img, const cv::RotatedRect &rotBox,
 
 #if defined WITH_CAIRO
 void RenderText(cv::Mat &img, std::string strText, cv::Point org,
-		bool bItalic, bool bBold, double dSize, cv::Scalar clr);
+		double dSize, cv::Scalar clr, bool bItalic, bool bBold);
 #endif
 
 }

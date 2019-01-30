@@ -243,8 +243,7 @@ cv::Rect DrawAlignedText(cv::Mat img, const std::string &strText, cv::Point org,
 #if defined WITH_CAIRO
 
 void RenderText(cv::Mat &raw, std::string strText, cv::Point org,
-		TEXT_ALIGN alignment, double dSize, cv::Scalar clr,
-		bool bItalic, bool bBold) {
+		double dSize, cv::Scalar clr, bool bItalic, bool bBold) {
 	CHECK(!raw.empty());
 	CHECK(raw.type() == CV_8UC3 || raw.type() == CV_8UC1);
 
